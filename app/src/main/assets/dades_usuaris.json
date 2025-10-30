@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nom": "Anna",
+    "cognom": "García",
+    "edat": 28,
+    "email": "anna.garcia@exemple.com",
+    "imatge_url": "avatar_a"
+  },
+  {
+    "id": 2,
+    "nom": "Pau",
+    "cognom": "Martínez",
+    "edat": 35,
+    "email": "pau.martinez@exemple.com",
+    "imatge_url": "avatar_p"
+  },
+  {
+    "id": 3,
+    "nom": "Laura",
+    "cognom": "Soler",
+    "edat": 22,
+    "email": "laura.soler@exemple.com",
+    "imatge_url": "avatar_l"
+  }
+]
