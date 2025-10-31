@@ -6,23 +6,33 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp"
+    android:padding="32dp"
     tools:context=".MenuPrincipalActivity">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Gestor de Perfils"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:layout_marginBottom="40dp"/>
+        android:layout_marginBottom="64dp"/>
 
     <Button
         android:id="@+id/btnAnarALlista"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Veure Llista de Perfils"
-        android:padding="12dp"
-        android:layout_marginBottom="10dp"/>
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnRestaurarDades"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Restaurar Dades Inicials (Reset)"
+        android:backgroundTint="@android:color/holo_orange_dark"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
+        android:layout_marginTop="16dp"/>
 
 </LinearLayout>

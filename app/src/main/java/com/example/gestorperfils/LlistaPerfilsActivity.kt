@@ -15,12 +15,13 @@ import android.view.MenuItem
 import androidx.appcompat.widget.SearchView
 import java.io.File
 import java.io.FileWriter
-import androidx.recyclerview.widget.ItemTouchHelper // NOU IMPORT
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
-import android.graphics.Canvas // NOU IMPORT
-import androidx.core.content.ContextCompat // NOU IMPORT (per al color)
+import android.graphics.Canvas
+import androidx.core.content.ContextCompat
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable // NOU IMPORT
+import android.graphics.drawable.ColorDrawable
+import androidx.appcompat.app.AlertDialog // 💡 NOU IMPORT: Per al Diàleg de Confirmació
 
 class LlistaPerfilsActivity : AppCompatActivity() {
 
@@ -58,7 +59,6 @@ class LlistaPerfilsActivity : AppCompatActivity() {
         configurarToolbar()
     }
 
-// ... (El codi de Refresc, JSON i Launchers es manté igual) ...
 // -----------------------------------------------------------------
 // Lògica de Refresc de la Llista
 // -----------------------------------------------------------------
@@ -136,15 +136,19 @@ class LlistaPerfilsActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             val data: Intent? = result.data
-            val nouPerfil = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val nouPerfilSenseId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 data?.getParcelableExtra(NouPerfilActivity.EXTRA_NOU_PERFIL, PerfilUsuari::class.java)
             } else {
                 @Suppress("DEPRECATION")
                 data?.getParcelableExtra(NouPerfilActivity.EXTRA_NOU_PERFIL)
             }
 
-            nouPerfil?.let {
-                afegirPerfil(it) // Afegeix i guarda
+            nouPerfilSenseId?.let { perfil ->
+                // 💡 PAS D'ASSIGNACIÓ D'ID ÚNICA
+                val novaId = obtenirProximaId()
+                val nouPerfilAmbId = perfil.copy(id = novaId)
+
+                afegirPerfil(nouPerfilAmbId) // Afegeix i guarda el perfil AMB ID
                 refrescarLlistaCompletament() // Força l'actualització de la vista
             }
         }
@@ -224,11 +228,7 @@ class LlistaPerfilsActivity : AppCompatActivity() {
             // 💾 GUARDA ELS CANVIS
             guardarLlistaAInternalStorage()
 
-            // Si estem en mode de cerca, això pot ser un problema.
-            // Per simplicitat, aquí només notifiquem l'eliminació. El refresc complet
-            // si es fes sense cerca seria més fàcil. Però com que hem implementat
-            // el filtre, hem d'utilitzar la llista que es mostra.
-            // La funció eliminarPerfil de sota serà la que s'executarà amb el swipe.
+            // La crida a refrescarLlistaCompletament() ja es fa des dels launchers
         }
     }
 
@@ -264,11 +264,76 @@ class LlistaPerfilsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Calcula i retorna les estadístiques bàsiques de la llista de perfils.
+     */
+    private fun calcularEstadistiques(): Map<String, Any> {
+        val total = llistaPerfils.size
+        val actius = llistaPerfils.count { it.actiu }
+        val inactius = total - actius
+
+        // Calcular la mitjana d'edat. Si la llista és buida, retorna 0.0
+        val mitjanaEdat = if (total > 0) {
+            llistaPerfils.map { it.edat.toDouble() }.average()
+        } else {
+            0.0
+        }
+
+        return mapOf(
+            "total" to total,
+            "actius" to actius,
+            "inactius" to inactius,
+            "mitjanaEdat" to mitjanaEdat
+        )
+    }
+
+    /**
+     * Calcula la pròxima ID única trobant la ID màxima existent i sumant-li 1.
+     * Si la llista és buida, retorna 1.
+     */
+    private fun obtenirProximaId(): Int {
+        if (llistaPerfils.isEmpty()) {
+            return 1
+        }
+        // Troba l'ID màxima de la llista i suma 1
+        val maxId = llistaPerfils.maxOf { it.id }
+        return maxId + 1
+    }
+
+    // -----------------------------------------------------------------
+    // LÒGICA DEL DIÀLEG DE SWIPE (NOVA)
+    // -----------------------------------------------------------------
+
+    /**
+     * Mostra un AlertDialog per confirmar l'eliminació per swipe.
+     */
+    private fun mostrarDialegConfirmacioSwipe(position: Int) {
+        val adapter = rvPerfils.adapter as? PerfilsAdapter
+        val perfilAEliminar = adapter?.getPerfilAt(position)
+
+        if (perfilAEliminar == null) {
+            adapter?.notifyItemChanged(position) // Reseteja la vista si no hi ha perfil
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Confirmar Eliminació")
+            .setMessage("Estàs segur que vols eliminar el perfil de ${perfilAEliminar.nom} ${perfilAEliminar.cognom}?")
+            .setPositiveButton("Eliminar") { dialog, which ->
+                // Si l'usuari confirma, executa la funció d'eliminació real
+                eliminarPerfilEnPosicio(position)
+            }
+            .setNegativeButton("Cancel·lar") { dialog, which ->
+                // Si l'usuari cancel·la, desfa l'acció de swipe (torna l'element)
+                adapter.notifyItemChanged(position)
+            }
+            .show()
+    }
 
     // -----------------------------------------------------------------
 // Lògica de la Toolbar/Menú (AMB LÒGICA DE CERCA)
 // -----------------------------------------------------------------
-    // ... (onCreateOptionsMenu es manté igual) ...
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // 1. Infla el menú (que ara conté l'ítem 'action_cercar')
         menuInflater.inflate(R.menu.menu_llista, menu)
@@ -318,6 +383,17 @@ class LlistaPerfilsActivity : AppCompatActivity() {
                 nouPerfilLauncher.launch(intent) // Llança per afegir perfil
                 true
             }
+            R.id.action_estadistiques -> { // 💡 NOVA ACCIÓ
+                val stats = calcularEstadistiques()
+                val intent = Intent(this, EstadistiquesActivity::class.java).apply {
+                    putExtra(EstadistiquesActivity.EXTRA_TOTAL_PERFILS, stats["total"] as Int)
+                    putExtra(EstadistiquesActivity.EXTRA_ACTIUS_PERFILS, stats["actius"] as Int)
+                    putExtra(EstadistiquesActivity.EXTRA_INACTIUS_PERFILS, stats["inactius"] as Int)
+                    putExtra(EstadistiquesActivity.EXTRA_MITJANA_EDAT, stats["mitjanaEdat"] as Double)
+                }
+                startActivity(intent)
+                true
+            }
             // La cerca es gestiona al onCreateOptionsMenu, així que la deixem fora d'aquí.
             else -> super.onOptionsItemSelected(item)
         }
@@ -349,7 +425,7 @@ class LlistaPerfilsActivity : AppCompatActivity() {
     }
 
     /**
-     * Configura el comportament de lliscament per eliminar. (NOU)
+     * Configura el comportament de lliscament per eliminar. (MODIFICAT PER AL DIÀLEG)
      */
     private fun configurarSwipeToDelete() {
         // Definim la funció de callback
@@ -367,7 +443,8 @@ class LlistaPerfilsActivity : AppCompatActivity() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    eliminarPerfilEnPosicio(position) // Cridem la nova funció d'eliminació
+                    // 💡 CANVI CLAU: Cridem el diàleg de confirmació en lloc d'eliminar directament
+                    mostrarDialegConfirmacioSwipe(position)
                 }
             }
 

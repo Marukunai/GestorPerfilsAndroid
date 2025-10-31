@@ -9,6 +9,12 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
 
     <item
+        android:id="@+id/action_estadistiques"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="Estadístiques"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_afegir_perfil"
         android:icon="@android:drawable/ic_menu_add"
         android:title="Afegir Perfil"

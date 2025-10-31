@@ -11,8 +11,6 @@ class NouPerfilActivity : AppCompatActivity() {
     // Clau per retornar el nou perfil a la llista
     companion object {
         const val EXTRA_NOU_PERFIL = "nou_perfil_creat"
-        // Utilitzarem una ID temporal per als nous perfils, ja que no estem en una BBDD real
-        private var nextId = 10
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +40,7 @@ class NouPerfilActivity : AppCompatActivity() {
         val etCognom = findViewById<EditText>(R.id.etCognom)
         val etEdat = findViewById<EditText>(R.id.etEdat)
         val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etImatgeUrl = findViewById<EditText>(R.id.etImatgeUrl)
 
         // Validació simple (només comprovació de buit per simplicitat)
         if (etNom.text.isBlank() || etCognom.text.isBlank() || etEdat.text.isBlank() || etEmail.text.isBlank()) {
@@ -49,14 +48,18 @@ class NouPerfilActivity : AppCompatActivity() {
             return
         }
 
+        // Recuperem la URL, si està buida, deixem una cadena buida
+        val imatgeUrl = etImatgeUrl.text.toString().trim()
+
         // 2. Crear l'objecte PerfilUsuari (utilitzant el teu model Parcelable)
         val nouPerfil = PerfilUsuari(
-            id = nextId++, // Assigna ID temporal i incrementa
+            id = -1,
             nom = etNom.text.toString(),
             cognom = etCognom.text.toString(),
             edat = etEdat.text.toString().toIntOrNull() ?: 0,
             email = etEmail.text.toString(),
-            imatge_url = "" // Deixem buit per ara
+            imatge_url = imatgeUrl,
+            actiu = true
         )
 
         // 3. Crear l'Intent i adjuntar el nou perfil

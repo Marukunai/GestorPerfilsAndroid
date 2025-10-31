@@ -3,23 +3,28 @@ package com.example.gestorperfils
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 
 class DetallPerfilActivity : AppCompatActivity() {
 
     // Vistes per visualització (ara seran EditTexts/TextViews que canviaran)
+    private lateinit var ivFotoPerfilDetall: ImageView
     private lateinit var tvDetallNom: TextView
     private lateinit var etDetallEmail: EditText // Canvi a EditText per edició
     private lateinit var etDetallImatgeUrl: EditText // NOU: Per la URL de la imatge
-    private lateinit var etDetallEstat: EditText // Canvi a EditText per edició
+    private lateinit var swDetallEstat: SwitchCompat
 
-    private lateinit var btnCanviarEstat: Button
     private lateinit var btnEliminarPerfil: Button
     private lateinit var btnGuardarCanvis: Button // NOU BOTÓ DE GUARDAR
 
@@ -45,14 +50,14 @@ class DetallPerfilActivity : AppCompatActivity() {
         inicialitzarVistes()
 
         // 2. Recuperar l'objecte PerfilUsuari
-        perfilActual = recuperarPerfil() // <--- CRIDA RESOLTA
+        perfilActual = recuperarPerfil()
 
         // 3. Si tenim dades, les mostrem i configurem
         perfilActual?.let {
             mostrarDades(it)
-            configurarBotoEstat()
+            carregarImatge(it.imatge_url)
             configurarBotoEliminar()
-            configurarBotoGuardar() // <-- Nova funció de guardar
+            configurarBotoGuardar()
         }
 
         // 4. Configurar la Toolbar i el Menu
@@ -74,7 +79,6 @@ class DetallPerfilActivity : AppCompatActivity() {
                 true
             }
             android.R.id.home -> {
-                // Gestió de la fletxa de retorn de la Toolbar (Botó HOME)
                 onSupportNavigateUp()
                 true
             }
@@ -83,7 +87,6 @@ class DetallPerfilActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        // Al tornar enrere, tornem el resultat d'una simple visualització (RESULT_CANCELED)
         setResult(RESULT_CANCELED)
         onBackPressedDispatcher.onBackPressed()
         return true
@@ -92,6 +95,11 @@ class DetallPerfilActivity : AppCompatActivity() {
     // --- Funcions d'Inicialització ---
 
     private fun configurarToolbar() {
+        // 💡 Assumim que la toolbar es carrega manualment si el tema és NoActionBar
+        // Si la crida al findViewById falta aquí, cal afegir-la:
+        // val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbarDetall)
+        // setSupportActionBar(toolbar)
+
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             title = "Detall del Perfil"
@@ -99,19 +107,16 @@ class DetallPerfilActivity : AppCompatActivity() {
     }
 
     private fun inicialitzarVistes() {
-        tvDetallNom = findViewById(R.id.tvDetallNom) // Aquesta es manté TextView (Nom i Cognom)
-        etDetallEmail = findViewById(R.id.etDetallEmail) // Vistes canviades a EditText
-        etDetallImatgeUrl = findViewById(R.id.etDetallImatgeUrl) // NOU
-        etDetallEstat = findViewById(R.id.etDetallEstat) // Vistes canviades a EditText
+        ivFotoPerfilDetall = findViewById(R.id.ivFotoPerfilDetall)
+        tvDetallNom = findViewById(R.id.tvDetallNom)
+        etDetallEmail = findViewById(R.id.etDetallEmail)
+        etDetallImatgeUrl = findViewById(R.id.etDetallImatgeUrl)
+        swDetallEstat = findViewById(R.id.swDetallEstat)
 
-        btnCanviarEstat = findViewById(R.id.btnCanviarEstat)
         btnEliminarPerfil = findViewById(R.id.btnEliminarPerfil)
-        btnGuardarCanvis = findViewById(R.id.btnGuardarCanvis) // Assumim que aquest botó existeix al layout
+        btnGuardarCanvis = findViewById(R.id.btnGuardarCanvis)
     }
 
-    /**
-     * Recupera l'objecte PerfilUsuari de l'Intent. (FUNCIÓ AFAGIDA)
-     */
     private fun recuperarPerfil(): PerfilUsuari? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(PERFIL_SELECCIONAT_KEY, PerfilUsuari::class.java)
@@ -121,40 +126,45 @@ class DetallPerfilActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Omple els TextViews/EditTexts amb la informació del perfil.
-     */
     private fun mostrarDades(perfil: PerfilUsuari) {
         // Nom i Cognom es mantenen no editables
         tvDetallNom.text = "${perfil.nom} ${perfil.cognom} (${perfil.edat} anys)"
 
         // Camps editables
         etDetallEmail.setText(perfil.email)
-        etDetallImatgeUrl.setText(perfil.imatge_url) // NOU
-        etDetallEstat.setText(if (perfil.actiu) "Actiu" else "Inactiu")
+        etDetallImatgeUrl.setText(perfil.imatge_url)
+        swDetallEstat.isChecked = perfil.actiu
+    }
+
+    // Càrrega de la Imatge amb Glide
+    private fun carregarImatge(url: String) {
+        Log.d("DetallPerfilActivity", "Carregant imatge des de: $url")
+
+        if (url.isNotEmpty()) {
+            Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.ic_default_avatar)
+                .error(R.drawable.ic_default_avatar)
+                .into(ivFotoPerfilDetall)
+        } else {
+            ivFotoPerfilDetall.setImageResource(R.drawable.ic_default_avatar)
+        }
     }
 
     // --- Lògica d'Edició ---
 
-    /**
-     * Commuta l'estat d'edició.
-     */
     private fun toggleEdicio() {
         isEditing = !isEditing
         actualitzarEstatEdicio(isEditing)
     }
 
-    /**
-     * Habilita/Deshabilita els camps per a l'edició.
-     */
     private fun actualitzarEstatEdicio(editing: Boolean) {
-        // Habilita/Deshabilita l'edició als EditTexts
+        // Habilita/Deshabilita l'edició
         etDetallEmail.isEnabled = editing
         etDetallImatgeUrl.isEnabled = editing
-        etDetallEstat.isEnabled = editing // Es podria reemplaçar amb un Switch/Spinner per control més estricte
+        swDetallEstat.isEnabled = editing
 
         // Canvia la visibilitat dels botons segons el mode
-        btnCanviarEstat.visibility = if (editing) Button.GONE else Button.VISIBLE
         btnEliminarPerfil.visibility = if (editing) Button.GONE else Button.VISIBLE
         btnGuardarCanvis.visibility = if (editing) Button.VISIBLE else Button.GONE
 
@@ -162,55 +172,20 @@ class DetallPerfilActivity : AppCompatActivity() {
         supportActionBar?.title = if (editing) "Editant Perfil" else "Detall del Perfil"
     }
 
-    // --- Lògica de Botons ---
+    // --- Lògica de Botons i Diàlegs ---
 
-    /**
-     * Configura el listener del botó per canviar l'estat.
-     */
-    private fun configurarBotoEstat() {
-        btnCanviarEstat.setOnClickListener {
-            val nouEstat = if (perfilActual?.actiu == true) false else true
-
-            // Creem una còpia actualitzada del perfil per actualitzar la UI
-            perfilActual = perfilActual?.copy(actiu = nouEstat)
-
-            perfilActual?.let { p ->
-                // Actualitzem l'EditText (UI)
-                etDetallEstat.setText(if (p.actiu) "Actiu" else "Inactiu")
-                // Retornem el canvi sense entrar en mode edició
-                retornarCanvis(p)
-            }
-        }
-    }
-
-    /**
-     * Configura el listener del botó per guardar els canvis.
-     */
     private fun configurarBotoGuardar() {
         btnGuardarCanvis.setOnClickListener {
             guardarICrearResultat()
         }
     }
 
-    /**
-     * Recull les dades dels camps editats i retorna el resultat a LlistaPerfilsActivity.
-     */
     private fun guardarICrearResultat() {
         val nouEmail = etDetallEmail.text.toString()
         val novaImatgeUrl = etDetallImatgeUrl.text.toString()
-        val nouEstatString = etDetallEstat.text.toString().lowercase()
+        val nouEstatBoolean = swDetallEstat.isChecked
 
-        // 1. Validació bàsica (permetem que l'estat sigui només "actiu" o "inactiu")
-        val nouEstatBoolean = when (nouEstatString) {
-            "actiu" -> true
-            "inactiu" -> false
-            else -> {
-                Toast.makeText(this, "Estat no vàlid. Utilitza 'Actiu' o 'Inactiu'.", Toast.LENGTH_SHORT).show()
-                return // Sortim de la funció si la validació falla
-            }
-        }
-
-        // 2. Creació del nou objecte PerfilUsuari (utilitzant 'copy' per preservar l'ID, el Nom, Cognom, Edat)
+        // Creació del nou objecte PerfilUsuari
         val perfilModificat = perfilActual?.copy(
             email = nouEmail,
             actiu = nouEstatBoolean,
@@ -222,9 +197,6 @@ class DetallPerfilActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Retorna el perfil actualitzat a l'Activity de llista.
-     */
     private fun retornarCanvis(perfil: PerfilUsuari) {
         val resultIntent = Intent().apply {
             // Adjuntem l'objecte PerfilUsuari modificat
@@ -236,24 +208,48 @@ class DetallPerfilActivity : AppCompatActivity() {
 
 
     /**
-     * Configura el listener del botó per eliminar el perfil i retornar el resultat.
+     * Configura el listener del botó per eliminar el perfil. Mostra el diàleg.
      */
     private fun configurarBotoEliminar() {
         btnEliminarPerfil.setOnClickListener {
-            val idPerfil = perfilActual?.id
+            // 💡 En lloc d'eliminar directament, cridem el diàleg de confirmació
+            mostrarDialegConfirmacioEliminacio()
+        }
+    }
 
-            if (idPerfil != null) {
-                // 1. Crear l'Intent de resultat i adjuntar l'ID
-                val resultIntent = Intent().apply {
-                    putExtra(EXTRA_PERFIL_ID_ELIMINAR, idPerfil)
-                }
+    /**
+     * Mostra un AlertDialog per confirmar l'eliminació.
+     */
+    private fun mostrarDialegConfirmacioEliminacio() {
+        // Obtenim el nom per al missatge
+        val nomComplet = "${perfilActual?.nom} ${perfilActual?.cognom}"
 
-                // 2. Establir el codi de resultat personalitzat per a ELIMINAR
-                setResult(RESULT_ELIMINAR, resultIntent)
-
-                // 3. Tancar la pantalla
-                finish()
+        AlertDialog.Builder(this)
+            .setTitle("Confirmar Eliminació")
+            .setMessage("Estàs segur que vols eliminar el perfil de $nomComplet?")
+            .setPositiveButton("Eliminar") { dialog, which ->
+                // Si l'usuari confirma, executa l'eliminació i tanca
+                eliminarPerfilIRetornarResultat()
             }
+            .setNegativeButton("Cancel·lar", null) // Tanca el diàleg sense fer res
+            .show()
+    }
+
+    /**
+     * Funció que executa l'eliminació real i retorna el resultat.
+     */
+    private fun eliminarPerfilIRetornarResultat() {
+        val idPerfil = perfilActual?.id
+
+        if (idPerfil != null) {
+            val resultIntent = Intent().apply {
+                putExtra(EXTRA_PERFIL_ID_ELIMINAR, idPerfil)
+            }
+            // Establir el codi de resultat personalitzat per a ELIMINAR
+            setResult(RESULT_ELIMINAR, resultIntent)
+            finish()
+        } else {
+            Toast.makeText(this, "Error: No s'ha pogut obtenir la ID del perfil.", Toast.LENGTH_SHORT).show()
         }
     }
 }

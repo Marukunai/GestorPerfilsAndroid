@@ -5,18 +5,28 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
     tools:context=".DetallPerfilActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbarDetall"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:elevation="4dp" />
+
     <ImageView
-        android:id="@+id/ivDetallFoto"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginTop="32dp"
+        android:id="@+id/ivFotoPerfilDetall"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="40dp"
         android:src="@drawable/ic_launcher_foreground"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbarDetall"
         android:contentDescription="Imatge de perfil gran" />
 
     <TextView
@@ -28,7 +38,7 @@
         android:textStyle="bold"
         android:text="Nom:"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivDetallFoto" />
+        app:layout_constraintTop_toBottomOf="@id/ivFotoPerfilDetall" />
 
     <TextView
         android:id="@+id/tvDetallNom"
@@ -101,19 +111,19 @@
         app:layout_constraintStart_toStartOf="@id/tvEtiquetaImatgeUrl"
         app:layout_constraintTop_toBottomOf="@id/etDetallImatgeUrl" />
 
-    <EditText
-        android:id="@+id/etDetallEstat"
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/swDetallEstat"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:textSize="16sp"
-        android:inputType="text"
-        android:background="@android:color/transparent"
+        android:textOff="Inactiu"
+        android:textOn="Actiu"
+        android:checked="false"
         android:enabled="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tvEtiquetaEstat"
-        app:layout_constraintTop_toTopOf="@id/tvEtiquetaEstat"
-        tools:text="Actiu" />
+        app:layout_constraintTop_toTopOf="@id/tvEtiquetaEstat" />
 
     <Button
         android:id="@+id/btnGuardarCanvis"
@@ -124,27 +134,17 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etDetallEstat" />
-
-    <Button
-        android:id="@+id/btnCanviarEstat"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Canviar Estat"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etDetallEstat" />
+        app:layout_constraintTop_toBottomOf="@id/swDetallEstat" />
 
     <Button
         android:id="@+id/btnEliminarPerfil"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="48dp"
         android:text="ELIMINAR PERFIL"
         android:backgroundTint="@android:color/holo_red_dark"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnCanviarEstat" />
+        app:layout_constraintTop_toBottomOf="@id/btnGuardarCanvis" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
