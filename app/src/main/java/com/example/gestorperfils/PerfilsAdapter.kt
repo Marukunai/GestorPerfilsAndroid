@@ -8,10 +8,11 @@ import android.widget.Filterable
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide // Importa Glide
 
 /**
  * Adapter per al RecyclerView que mostra la llista de Perfils, ara amb funcionalitat de cerca i eliminació per lliscament.
- * @param perfils La llista de dades PerfilUsuari a mostrar inicialment.
+ * @param llistaOriginal La llista de dades PerfilUsuari a mostrar inicialment.
  * @param onClickListener Una funció lambda que s'executarà quan es faci click a un ítem.
  */
 class PerfilsAdapter(
@@ -26,6 +27,7 @@ class PerfilsAdapter(
     // 1. ViewHolder: Conté les vistes (UI elements) de l'ítem
     // -----------------------------------------------------------
     inner class PerfilViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        // Inicialització de les vistes mitjançant findViewById
         val tvNomComplet: TextView = view.findViewById(R.id.tvNomComplet)
         val tvEdat: TextView = view.findViewById(R.id.tvEdat)
         val ivAvatar: ImageView = view.findViewById(R.id.ivAvatar)
@@ -35,8 +37,12 @@ class PerfilsAdapter(
             tvNomComplet.text = "${perfil.nom} ${perfil.cognom}"
             tvEdat.text = "Edat: ${perfil.edat} anys"
 
-            // La imatge es deixa com a placeholder per simplicitat
-            // Aquí normalment faries: ivAvatar.setImageResource(R.drawable.un_recurs_drawable)
+            // Utilitzem 'ivAvatar.context' per al context, ja que 'binding' no existeix.
+            Glide.with(ivAvatar.context)
+                .load(perfil.imatge_url) // La URL de la imatge
+                .placeholder(R.drawable.ic_default_avatar) // Imatge temporal mentre carrega
+                .error(R.drawable.ic_default_avatar) // Imatge si hi ha un error de càrrega
+                .into(ivAvatar) // Injectem la imatge al nostre ImageView
 
             // Gestionar el click a tot l'ítem
             itemView.setOnClickListener {

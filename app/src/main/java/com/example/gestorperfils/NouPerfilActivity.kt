@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 
 class NouPerfilActivity : AppCompatActivity() {
 
@@ -44,8 +45,17 @@ class NouPerfilActivity : AppCompatActivity() {
 
         // Validació simple (només comprovació de buit per simplicitat)
         if (etNom.text.isBlank() || etCognom.text.isBlank() || etEdat.text.isBlank() || etEmail.text.isBlank()) {
-            // Aquí es mostraria un Toast o un missatge d'error
-            return
+
+            // Mostrar un AlertDialog
+            AlertDialog.Builder(this)
+                .setTitle("Dades Incompletes")
+                .setMessage("Si us plau, omple tots els camps obligatoris (Nom, Cognom, Edat, Email) per poder continuar.")
+                .setPositiveButton("D'acord") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+
+            return // El return es manté per aturar el procés de guardat
         }
 
         // Recuperem la URL, si està buida, deixem una cadena buida
