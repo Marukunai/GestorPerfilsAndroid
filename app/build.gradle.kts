@@ -1,8 +1,25 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("kotlin-parcelize")
+}
+
+// =================================================================
+// 1. LECTURA SEGURA DE LA KEY STORE (Només si el fitxer existeix)
+// =================================================================
+
+// Defineix les propietats de la signatura
+val signingProperties = Properties()
+val propertiesFile = rootProject.file("keystore.properties")
+
+if (propertiesFile.exists()) {
+    FileInputStream(propertiesFile).use {
+        signingProperties.load(it)
+    }
 }
 
 android {
@@ -19,6 +36,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // =================================================================
+    // 2. CONFIGURACIÓ DE LA SIGNATURA
+    // =================================================================
+    signingConfigs {
+        create("release") {
+            // Només assigna valors si hem pogut carregar el fitxer de propietats local
+            if (signingProperties.isNotEmpty()) {
+                storeFile = file(signingProperties.getProperty("storeFile"))
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -26,9 +58,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
-    compileOptions {
+
+   compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -41,7 +75,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
